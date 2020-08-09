@@ -1,6 +1,7 @@
 package ipx
 
 import (
+	b "math/bits"
 	"net"
 )
 
@@ -21,19 +22,20 @@ func summarizeRange4(first, last uint32) (nets []*net.IPNet) {
 	for first <= last {
 		// the network will either be as long as all the trailing zeros of the first address OR the number of bits
 		// necessary to cover the distance between first and last address -- whichever is smaller
-		bits := uint64(32)
-		if trailingZeros := countBits(uint64((first - 1) &^ first)); trailingZeros < bits {
+		bits := 32
+		if trailingZeros := b.TrailingZeros32(first); trailingZeros < bits {
 			bits = trailingZeros
 		}
+
 		if first != 0 || last != maxUint32 { // guard overflow; this would just be 32 anyway
-			if diffBits := countBits(uint64(last-first)+1) - 1; diffBits < bits {
+			if diffBits := 31 - b.LeadingZeros32(last-first+1); diffBits < bits {
 				bits = diffBits
 			}
 		}
 
 		ipN := net.IPNet{IP: make(net.IP, len(net.IPv4zero)), Mask: net.CIDRMask(int(32-bits), 32)}
-		copy(ipN.IP, net.IPv4zero)
 
+		ipN.IP = ipN.IP[:4]
 		from32(first, ipN.IP)
 		nets = append(nets, &ipN)
 
