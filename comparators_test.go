@@ -29,7 +29,7 @@ func ExampleCmpNet_IP4() {
 	b := cidr("192.168.0.10/16")
 	fmt.Println(ipx.CmpNet(a, b))
 	// Output:
-	// 1
+	// 0
 }
 
 func ExampleCmpNet_IP6() {
