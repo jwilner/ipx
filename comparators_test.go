@@ -50,6 +50,14 @@ func TestCmpIPPanic(t *testing.T) {
 	t.Errorf("did not panic")
 }
 
+func TestCmpNetPanic(t *testing.T) {
+	defer func() { recover() }()
+	a := cidr("192.168.0.10/24")
+	ipx.CmpNet(a, nil)
+
+	t.Errorf("did not panic")
+}
+
 func TestCmpIP(t *testing.T) {
 	for _, c := range []struct {
 		name     string

@@ -18,5 +18,8 @@ func CmpIP(a, b net.IP) int {
 
 // CmpNet compares two networks, using only the IP, disregarding the mask
 func CmpNet(a, b *net.IPNet) int {
+	if a == nil || b == nil {
+		panic(errors.New("neither net can be nil"))
+	}
 	return CmpIP(a.IP, b.IP)
 }
