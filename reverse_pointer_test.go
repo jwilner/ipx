@@ -8,13 +8,13 @@ import (
 	"github.com/ns1/ipx"
 )
 
-func ExampleReversePointerIPv4() {
+func ExampleReversePointer_IPv4() {
 	fmt.Println(ipx.ReversePointer(net.ParseIP("192.168.0.10")))
 	// Output:
 	// 10.0.168.192.in-addr.arpa
 }
 
-func ExampleReversePointerIPv6() {
+func ExampleReversePointer_IPv6() {
 	fmt.Println(ipx.ReversePointer(net.ParseIP("2001:db8::1")))
 	// Output:
 	// 1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2.ip6.arpa
