@@ -12,6 +12,11 @@ func CmpIP(a, b net.IP) int {
 		panic(errors.New("IP versions must be the same"))
 	}
 
-	aInt := to128(a)
-	return aInt.Cmp(to128(b))
+	aInt := to128(a.To16())
+	return aInt.Cmp(to128(b.To16()))
+}
+
+// CmpNet compares two networks, using only the IP, disregarding the mask
+func CmpNet(a, b *net.IPNet) int {
+	return CmpIP(a.IP, b.IP)
 }
