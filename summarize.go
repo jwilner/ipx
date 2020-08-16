@@ -1,9 +1,12 @@
 package ipx
 
 import (
+	"errors"
 	b "math/bits"
 	"net"
 )
+
+var v4InV6Prefix = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff}
 
 // SummarizeRange returns a series of networks which combined cover the range between the first and last addresses,
 // inclusive.
@@ -87,4 +90,58 @@ func leadingZeros128(i uint128) int {
 		leadingZeros += b.LeadingZeros64(i.L)
 	}
 	return leadingZeros
+}
+
+func allFF(b []byte) bool {
+	for _, c := range b {
+		if c != 0xff {
+			return false
+		}
+	}
+	return true
+}
+
+func bytesEqual(a, b []byte) bool {
+	for len(a) != len(b) {
+		panic(errors.New("a and b are not equal length"))
+	}
+	for i := 0; i < len(a); i++ {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// NetToRange returns the start and end IPs for the given net
+func NetToRange(cidr *net.IPNet) (start, end net.IP) {
+	// Ripped mostly from net.IP.Mask()
+	if cidr == nil {
+		panic(errors.New("cidr must not be nil"))
+	}
+
+	ip, mask := cidr.IP, cidr.Mask
+
+	if len(mask) == net.IPv6len && len(ip) == net.IPv4len && allFF(mask[:12]) {
+		mask = mask[12:]
+	}
+
+	// IPv4-mapped IPv6 address
+	if len(mask) == net.IPv4len && len(ip) == net.IPv6len && bytesEqual(ip[:12], v4InV6Prefix) {
+		ip = ip[12:]
+	}
+
+	n := len(ip)
+	if n != len(mask) {
+		return nil, nil
+	}
+
+	start = make(net.IP, n)
+	end = make(net.IP, n)
+	for i := 0; i < n; i++ {
+		start[i] = ip[i] & mask[i]
+		end[i] = ip[i] | ^mask[i]
+	}
+
+	return
 }

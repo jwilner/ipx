@@ -2,9 +2,12 @@ package ipx_test
 
 import (
 	"fmt"
-	"github.com/ns1/ipx"
 	"net"
+	"strconv"
+	"strings"
 	"testing"
+
+	"github.com/ns1/ipx"
 )
 
 func ExampleSummarizeRange() {
@@ -157,4 +160,110 @@ func TestSummarizeRange(t *testing.T) {
 			}
 		})
 	}
+}
+
+func ExampleNetToRange() {
+	fmt.Println(ipx.SummarizeRange(
+		net.ParseIP("::"),
+		net.ParseIP("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"),
+	))
+	// Output:
+	// [::/0]
+}
+
+func TestNetToRange(t *testing.T) {
+	for _, c := range []struct {
+		name  string
+		cidr  string
+		start string
+		end   string
+	}{
+		{
+			"ipv4 within subnet",
+			"192.168.0.10/29",
+			"192.168.0.8",
+			"192.168.0.15",
+		},
+		{
+			"ipv4 cross subnets",
+			"192.168.0.253/23",
+			"192.168.0.0",
+			"192.168.1.255",
+		},
+		{
+			"ipv4 mapped ipv6 dot notation",
+			"::ffff:192.168.0.10/29",
+			"::ffff:192.168.0.8",
+			"::ffff:192.168.0.15",
+		},
+		{
+			"ipv4 mapped ipv6",
+			"::ffff:c0a8:000A/29",
+			"::ffff:c0a8:0008",
+			"::ffff:c0a8:000F",
+		},
+		{
+			"ipv6 within subnet",
+			"2001:db8::8a2e:370:7334/120",
+			"2001:db8::8a2e:370:7300",
+			"2001:db8::8a2e:370:73ff",
+		},
+		{
+			"ipv6 cross subnets",
+			"2001:db8::8a2e:370:7334/107",
+			"2001:db8::8a2e:360:0",
+			"2001:db8::8a2e:37f:ffff",
+		},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			parsedCIDR := strings.Split(c.cidr, "/")
+			ip := net.ParseIP(parsedCIDR[0])
+			mask, _ := strconv.Atoi(parsedCIDR[1])
+
+			maskLen := 32
+			if ip.To4() == nil {
+				maskLen = 128
+			}
+
+			cidr := &net.IPNet{
+				IP:   ip,
+				Mask: net.CIDRMask(mask, maskLen),
+			}
+
+			start, end := ipx.NetToRange(cidr)
+
+			if !net.ParseIP(c.start).Equal(start) {
+				t.Errorf("start: expected %v but got %v", c.start, start)
+			}
+
+			if !net.ParseIP(c.end).Equal(end) {
+				t.Errorf("end: expected %v but got %v", c.end, end)
+			}
+		})
+	}
+}
+
+func BenchmarkCIDRtoRange(b *testing.B) {
+
+	ip4Net := &net.IPNet{
+		IP:   net.ParseIP("192.168.0.253"),
+		Mask: net.CIDRMask(23, 32),
+	}
+
+	ip6Net := &net.IPNet{
+		IP:   net.ParseIP("2001:db8::8a2e:370:7334"),
+		Mask: net.CIDRMask(107, 128),
+	}
+
+	b.Run("ipv4", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_, _ = ipx.NetToRange(ip4Net)
+		}
+	})
+
+	b.Run("ipv6", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_, _ = ipx.NetToRange(ip6Net)
+		}
+	})
 }
