@@ -1,6 +1,8 @@
 package ipx
 
-// largely cribbed from https://github.com/davidminor/uint128
+import "encoding/binary"
+
+// largely cribbed from https://github.com/davidminor/uint128 and https://github.com/lukechampine/uint128
 type uint128 struct {
 	H, L uint64
 }
@@ -84,41 +86,10 @@ func (u uint128) Not() uint128 {
 }
 
 func to128(ip []byte) uint128 {
-	return uint128{
-		uint64(ip[0])<<56 |
-			uint64(ip[1])<<48 |
-			uint64(ip[2])<<40 |
-			uint64(ip[3])<<32 |
-			uint64(ip[4])<<24 |
-			uint64(ip[5])<<16 |
-			uint64(ip[6])<<8 |
-			uint64(ip[7]),
-		uint64(ip[8])<<56 |
-			uint64(ip[9])<<48 |
-			uint64(ip[10])<<40 |
-			uint64(ip[11])<<32 |
-			uint64(ip[12])<<24 |
-			uint64(ip[13])<<16 |
-			uint64(ip[14])<<8 |
-			uint64(ip[15]),
-	}
+	return uint128{binary.BigEndian.Uint64(ip[:8]), binary.BigEndian.Uint64(ip[8:])}
 }
 
 func from128(u uint128, ip []byte) {
-	ip[0] = byte(u.H >> 56)
-	ip[1] = byte(u.H >> 48)
-	ip[2] = byte(u.H >> 40)
-	ip[3] = byte(u.H >> 32)
-	ip[4] = byte(u.H >> 24)
-	ip[5] = byte(u.H >> 16)
-	ip[6] = byte(u.H >> 8)
-	ip[7] = byte(u.H)
-	ip[8] = byte(u.L >> 56)
-	ip[9] = byte(u.L >> 48)
-	ip[10] = byte(u.L >> 40)
-	ip[11] = byte(u.L >> 32)
-	ip[12] = byte(u.L >> 24)
-	ip[13] = byte(u.L >> 16)
-	ip[14] = byte(u.L >> 8)
-	ip[15] = byte(u.L)
+	binary.BigEndian.PutUint64(ip[:8], u.H)
+	binary.BigEndian.PutUint64(ip[8:], u.L)
 }
