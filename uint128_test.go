@@ -20,12 +20,12 @@ func BenchmarkUint128(b *testing.B) {
 
 	b.Run("new", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_ = to128(ip6)
+			_ = To128(ip6)
 		}
 	})
 	b.Run("from", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			from128(left, blank)
+			From128(left, blank)
 		}
 	})
 	b.Run("add", func(b *testing.B) {

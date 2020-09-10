@@ -85,11 +85,13 @@ func (u Uint128) Not() Uint128 {
 	return Uint128{^u.H, ^u.L}
 }
 
-func to128(ip []byte) Uint128 {
-	return Uint128{binary.BigEndian.Uint64(ip[:8]), binary.BigEndian.Uint64(ip[8:])}
+// To128 returns Uint128 for a given bytes
+func To128(bytes []byte) Uint128 {
+	return Uint128{binary.BigEndian.Uint64(bytes[:8]), binary.BigEndian.Uint64(bytes[8:])}
 }
 
-func from128(u Uint128, ip []byte) {
-	binary.BigEndian.PutUint64(ip[:8], u.H)
-	binary.BigEndian.PutUint64(ip[8:], u.L)
+// From128 adds Uint128 value into given bytes
+func From128(u Uint128, bytes []byte) {
+	binary.BigEndian.PutUint64(bytes[:8], u.H)
+	binary.BigEndian.PutUint64(bytes[8:], u.L)
 }

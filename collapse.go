@@ -167,7 +167,7 @@ type ip6Net struct {
 
 func newIP6Net(ipN *net.IPNet) ip6Net {
 	ones, _ := ipN.Mask.Size()
-	return ip6Net{to128(ipN.IP), uint8(ones)}
+	return ip6Net{To128(ipN.IP), uint8(ones)}
 }
 
 func (n ip6Net) super() ip6Net {
@@ -185,8 +185,8 @@ func (n ip6Net) subnets() (ip6Net, ip6Net) {
 
 func (n ip6Net) asNet() *net.IPNet {
 	r := &net.IPNet{IP: make(net.IP, 16), Mask: make(net.IPMask, 16)}
-	from128(n.addr, r.IP)
-	from128(n.mask(), r.Mask) // set prefix bits
+	From128(n.addr, r.IP)
+	From128(n.mask(), r.Mask) // set prefix bits
 	return r
 }
 

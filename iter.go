@@ -45,7 +45,7 @@ func (i *IPIter) Next() bool {
 			if i.v6.val.Cmp(i.v6.limit) != 1 {
 				return false
 			}
-			from128(i.v6.val, i.ip)
+			From128(i.v6.val, i.ip)
 			old := i.v6.val
 			if i.v6.val = i.v6.val.Minus(i.v6.incr); old.Cmp(i.v6.val) == -1 {
 				i.v6.val = Uint128{0, 0}
@@ -55,7 +55,7 @@ func (i *IPIter) Next() bool {
 		if i.v6.val.Cmp(i.v6.limit) != -1 {
 			return false
 		}
-		from128(i.v6.val, i.ip)
+		From128(i.v6.val, i.ip)
 		i.v6.val = i.v6.val.Add(i.v6.incr)
 		return true
 	}
@@ -184,14 +184,14 @@ func resolveIPs4(start net.IP, step int, end net.IP, shift uint) *IPIter {
 }
 
 func resolveIPs6(start net.IP, step int, end net.IP, shift uint) *IPIter {
-	sIP := to128(start)
+	sIP := To128(start)
 	if step > 0 {
 		eIP := Uint128{maxUint64, maxUint64}
 		if end != nil {
 			if end.To4() != nil {
 				return new(IPIter)
 			}
-			eIP = to128(end)
+			eIP = To128(end)
 			if eIP.Cmp(sIP) != 1 {
 				return new(IPIter)
 			}
@@ -203,7 +203,7 @@ func resolveIPs6(start net.IP, step int, end net.IP, shift uint) *IPIter {
 		if end.To4() != nil {
 			return new(IPIter)
 		}
-		eIP = to128(end)
+		eIP = To128(end)
 		if eIP.Cmp(sIP) != -1 {
 			return new(IPIter)
 		}

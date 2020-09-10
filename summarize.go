@@ -18,7 +18,7 @@ func SummarizeRange(first, last net.IP) []*net.IPNet {
 	if four {
 		return summarizeRange4(to32(first), to32(last))
 	}
-	return summarizeRange6(to128(first), to128(last))
+	return summarizeRange6(To128(first), To128(last))
 }
 
 func summarizeRange4(first, last uint32) (nets []*net.IPNet) {
@@ -65,7 +65,7 @@ func summarizeRange6(first, last Uint128) (nets []*net.IPNet) {
 
 		ipN := net.IPNet{IP: make(net.IP, net.IPv6len), Mask: net.CIDRMask(128-bits, 128)}
 
-		from128(first, ipN.IP)
+		From128(first, ipN.IP)
 		nets = append(nets, &ipN)
 
 		first = first.Add(Uint128{0, 1}.Lsh(uint(bits)))
