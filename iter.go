@@ -15,7 +15,7 @@ type v4IPIter struct {
 }
 
 type v6IPIter struct {
-	val, incr, limit uint128
+	val, incr, limit Uint128
 }
 
 const (
@@ -48,7 +48,7 @@ func (i *IPIter) Next() bool {
 			from128(i.v6.val, i.ip)
 			old := i.v6.val
 			if i.v6.val = i.v6.val.Minus(i.v6.incr); old.Cmp(i.v6.val) == -1 {
-				i.v6.val = uint128{0, 0}
+				i.v6.val = Uint128{0, 0}
 			}
 			return true
 		}
@@ -98,7 +98,7 @@ func iterIPv4(val, incr, limit uint32) *IPIter {
 	return &iter
 }
 
-func iterIPv6(val, incr, limit uint128) *IPIter {
+func iterIPv6(val, incr, limit Uint128) *IPIter {
 	iter := IPIter{
 		ip:    make(net.IP, len(net.IPv6zero)),
 		v6:    v6IPIter{val, incr, limit},
@@ -186,7 +186,7 @@ func resolveIPs4(start net.IP, step int, end net.IP, shift uint) *IPIter {
 func resolveIPs6(start net.IP, step int, end net.IP, shift uint) *IPIter {
 	sIP := to128(start)
 	if step > 0 {
-		eIP := uint128{maxUint64, maxUint64}
+		eIP := Uint128{maxUint64, maxUint64}
 		if end != nil {
 			if end.To4() != nil {
 				return new(IPIter)
@@ -196,9 +196,9 @@ func resolveIPs6(start net.IP, step int, end net.IP, shift uint) *IPIter {
 				return new(IPIter)
 			}
 		}
-		return iterIPv6(sIP, uint128{0, uint64(step)}.Lsh(shift), eIP)
+		return iterIPv6(sIP, Uint128{0, uint64(step)}.Lsh(shift), eIP)
 	}
-	var eIP uint128
+	var eIP Uint128
 	if end != nil {
 		if end.To4() != nil {
 			return new(IPIter)
@@ -208,5 +208,5 @@ func resolveIPs6(start net.IP, step int, end net.IP, shift uint) *IPIter {
 			return new(IPIter)
 		}
 	}
-	return iterIPv6(sIP, uint128{0, uint64(step * -1)}.Lsh(shift), eIP)
+	return iterIPv6(sIP, Uint128{0, uint64(step * -1)}.Lsh(shift), eIP)
 }

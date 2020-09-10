@@ -3,23 +3,23 @@ package ipx
 import "encoding/binary"
 
 // largely cribbed from https://github.com/davidminor/uint128 and https://github.com/lukechampine/uint128
-type uint128 struct {
+type Uint128 struct {
 	H, L uint64
 }
 
-func (u uint128) And(other uint128) uint128 {
+func (u Uint128) And(other Uint128) Uint128 {
 	u.H &= other.H
 	u.L &= other.L
 	return u
 }
 
-func (u uint128) Or(other uint128) uint128 {
+func (u Uint128) Or(other Uint128) Uint128 {
 	u.H |= other.H
 	u.L |= other.L
 	return u
 }
 
-func (u uint128) Cmp(other uint128) int {
+func (u Uint128) Cmp(other Uint128) int {
 	switch {
 	case u.H > other.H:
 		return 1
@@ -33,7 +33,7 @@ func (u uint128) Cmp(other uint128) int {
 	}
 }
 
-func (u uint128) Add(addend uint128) uint128 {
+func (u Uint128) Add(addend Uint128) Uint128 {
 	old := u.L
 	u.H += addend.H
 	u.L += addend.L
@@ -43,7 +43,7 @@ func (u uint128) Add(addend uint128) uint128 {
 	return u
 }
 
-func (u uint128) Minus(addend uint128) uint128 {
+func (u Uint128) Minus(addend Uint128) Uint128 {
 	old := u.L
 	u.H -= addend.H
 	u.L -= addend.L
@@ -53,7 +53,7 @@ func (u uint128) Minus(addend uint128) uint128 {
 	return u
 }
 
-func (u uint128) Lsh(bits uint) uint128 {
+func (u Uint128) Lsh(bits uint) Uint128 {
 	switch {
 	case bits >= 128:
 		u.H, u.L = 0, 0
@@ -67,7 +67,7 @@ func (u uint128) Lsh(bits uint) uint128 {
 	return u
 }
 
-func (u uint128) Rsh(bits uint) uint128 {
+func (u Uint128) Rsh(bits uint) Uint128 {
 	switch {
 	case bits >= 128:
 		u.H, u.L = 0, 0
@@ -81,15 +81,15 @@ func (u uint128) Rsh(bits uint) uint128 {
 	return u
 }
 
-func (u uint128) Not() uint128 {
-	return uint128{^u.H, ^u.L}
+func (u Uint128) Not() Uint128 {
+	return Uint128{^u.H, ^u.L}
 }
 
-func to128(ip []byte) uint128 {
-	return uint128{binary.BigEndian.Uint64(ip[:8]), binary.BigEndian.Uint64(ip[8:])}
+func to128(ip []byte) Uint128 {
+	return Uint128{binary.BigEndian.Uint64(ip[:8]), binary.BigEndian.Uint64(ip[8:])}
 }
 
-func from128(u uint128, ip []byte) {
+func from128(u Uint128, ip []byte) {
 	binary.BigEndian.PutUint64(ip[:8], u.H)
 	binary.BigEndian.PutUint64(ip[8:], u.L)
 }

@@ -50,15 +50,15 @@ func summarizeRange4(first, last uint32) (nets []*net.IPNet) {
 	return
 }
 
-func summarizeRange6(first, last uint128) (nets []*net.IPNet) {
+func summarizeRange6(first, last Uint128) (nets []*net.IPNet) {
 	for first.Cmp(last) != 1 {
 		bits := 128
 		if trailingZeros := trailingZeros128(first); trailingZeros < bits {
 			bits = trailingZeros
 		}
 		// check extremes to make sure no overflow
-		if first.Cmp(uint128{0, 0}) != 0 || last.Cmp(uint128{maxUint64, maxUint64}) != 0 {
-			if diffBits := 127 - leadingZeros128(last.Minus(first).Add(uint128{0, 1})); diffBits < bits {
+		if first.Cmp(Uint128{0, 0}) != 0 || last.Cmp(Uint128{maxUint64, maxUint64}) != 0 {
+			if diffBits := 127 - leadingZeros128(last.Minus(first).Add(Uint128{0, 1})); diffBits < bits {
 				bits = diffBits
 			}
 		}
@@ -68,15 +68,15 @@ func summarizeRange6(first, last uint128) (nets []*net.IPNet) {
 		from128(first, ipN.IP)
 		nets = append(nets, &ipN)
 
-		first = first.Add(uint128{0, 1}.Lsh(uint(bits)))
-		if first.Cmp(uint128{0, 0}) == 0 {
+		first = first.Add(Uint128{0, 1}.Lsh(uint(bits)))
+		if first.Cmp(Uint128{0, 0}) == 0 {
 			break
 		}
 	}
 	return
 }
 
-func trailingZeros128(i uint128) int {
+func trailingZeros128(i Uint128) int {
 	trailingZeros := b.TrailingZeros64(i.L)
 	if trailingZeros == 64 {
 		trailingZeros += b.TrailingZeros64(i.H)
@@ -84,7 +84,7 @@ func trailingZeros128(i uint128) int {
 	return trailingZeros
 }
 
-func leadingZeros128(i uint128) int {
+func leadingZeros128(i Uint128) int {
 	leadingZeros := b.LeadingZeros64(i.H)
 	if leadingZeros == 64 {
 		leadingZeros += b.LeadingZeros64(i.L)
