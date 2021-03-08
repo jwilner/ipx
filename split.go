@@ -18,7 +18,7 @@ func Split(ipNet *net.IPNet, newPrefix int) *NetIter {
 		}
 	}
 
-	ip := To128(ipNet.IP)
+	ip := to128(ipNet.IP)
 
 	incr := Uint128{0, 1}.Lsh(uint(bits - newPrefix))
 
@@ -44,7 +44,7 @@ func Addresses(ipNet *net.IPNet) *IPIter {
 			ip+(1<<(bits-ones)),
 		)
 	}
-	ip := To128(ipNet.IP)
+	ip := to128(ipNet.IP)
 	return iterIPv6(
 		ip,
 		Uint128{0, 1},
@@ -64,7 +64,7 @@ func Hosts(ipNet *net.IPNet) *IPIter {
 		)
 	}
 
-	ip := To128(ipNet.IP).Add(Uint128{0, 1})
+	ip := to128(ipNet.IP).Add(Uint128{0, 1})
 
 	addend := Uint128{0, 1}.
 		Lsh(uint(bits - ones)).

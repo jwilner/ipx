@@ -23,13 +23,13 @@ func IncrIP(ip net.IP, incr int) {
 	}
 
 	// ipv6
-	u := To128(ip)
+	u := to128(ip)
 	if incr >= 0 {
 		u = u.Add(Uint128{0, uint64(incr)})
 	} else {
 		u = u.Minus(Uint128{0, uint64(incr * -1)})
 	}
-	From128(u, ip)
+	from128(u, ip)
 }
 
 // IncrNet steps to the next net of the same mask
@@ -54,7 +54,7 @@ func IncrNet(ipNet *net.IPNet, incr int) {
 		return
 	}
 
-	b := To128(ipNet.IP)
+	b := to128(ipNet.IP)
 
 	ones, bits := ipNet.Mask.Size()
 	suffix := uint(bits - ones)
@@ -67,7 +67,7 @@ func IncrNet(ipNet *net.IPNet, incr int) {
 	}
 	b = b.Lsh(suffix)
 
-	From128(b, ipNet.IP)
+	from128(b, ipNet.IP)
 }
 
 func to32(ip []byte) uint32 {
