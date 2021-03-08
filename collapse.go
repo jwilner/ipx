@@ -161,7 +161,7 @@ func (n ip4Nets) Swap(i, j int) {
 }
 
 type ip6Net struct {
-	addr   Uint128
+	addr   uint128
 	prefix uint8
 }
 
@@ -172,14 +172,14 @@ func newIP6Net(ipN *net.IPNet) ip6Net {
 
 func (n ip6Net) super() ip6Net {
 	// unset last bit of net mask to find supernet address
-	n.addr = n.addr.And(Uint128{0, 1}.Lsh(128 - uint(n.prefix)).Not())
+	n.addr = n.addr.And(uint128{0, 1}.Lsh(128 - uint(n.prefix)).Not())
 	n.prefix--
 	return n
 }
 
 func (n ip6Net) subnets() (ip6Net, ip6Net) {
 	a := ip6Net{addr: n.addr, prefix: n.prefix + 1}
-	b := ip6Net{addr: n.addr.Or(Uint128{0, 1}.Lsh(uint(127 - n.prefix))), prefix: n.prefix + 1}
+	b := ip6Net{addr: n.addr.Or(uint128{0, 1}.Lsh(uint(127 - n.prefix))), prefix: n.prefix + 1}
 	return a, b
 }
 
@@ -190,8 +190,8 @@ func (n ip6Net) asNet() *net.IPNet {
 	return r
 }
 
-func (n ip6Net) mask() Uint128 {
-	return Uint128{0, 1}.Lsh(128 - uint(n.prefix)).Minus(Uint128{0, 1}).Not()
+func (n ip6Net) mask() uint128 {
+	return uint128{0, 1}.Lsh(128 - uint(n.prefix)).Minus(uint128{0, 1}).Not()
 }
 
 func (n ip6Net) subnetOf(o ip6Net) bool {
