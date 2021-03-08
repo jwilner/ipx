@@ -76,22 +76,6 @@ func summarizeRange6(first, last uint128) (nets []*net.IPNet) {
 	return
 }
 
-func trailingZeros128(i uint128) int {
-	trailingZeros := b.TrailingZeros64(i.L)
-	if trailingZeros == 64 {
-		trailingZeros += b.TrailingZeros64(i.H)
-	}
-	return trailingZeros
-}
-
-func leadingZeros128(i uint128) int {
-	leadingZeros := b.LeadingZeros64(i.H)
-	if leadingZeros == 64 {
-		leadingZeros += b.LeadingZeros64(i.L)
-	}
-	return leadingZeros
-}
-
 func allFF(b []byte) bool {
 	for _, c := range b {
 		if c != 0xff {

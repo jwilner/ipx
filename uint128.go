@@ -1,6 +1,9 @@
 package ipx
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+	"math/bits"
+)
 
 // largely cribbed from https://github.com/davidminor/uint128 and https://github.com/lukechampine/uint128
 type uint128 struct {
@@ -31,6 +34,13 @@ func (u uint128) Cmp(other uint128) int {
 	default:
 		return 0
 	}
+}
+
+// Equal checks 128-bit values are equal.
+// Equivalent of `u.Cmp(other) == 0` but a bit fater.
+func (u uint128) Equal(other uint128) bool {
+	return (u.H == other.H) &&
+		(u.L == other.L)
 }
 
 func (u uint128) Add(addend uint128) uint128 {
@@ -83,6 +93,26 @@ func (u uint128) Rsh(bits uint) uint128 {
 
 func (u uint128) Not() uint128 {
 	return uint128{^u.H, ^u.L}
+}
+
+// TrailingZeros counts the number of trailing zeros.
+// Just as standard `bits.TrailingZerosXX` does.
+func (u uint128) TrailingZeros() int {
+	z := bits.TrailingZeros64(u.L)
+	if z == 64 {
+		z += bits.TrailingZeros64(u.H)
+	}
+	return z
+}
+
+// LeadingZeros counts the number of leading zeros.
+// Just as standard `bits.LeadingZerosXX` does.
+func (u uint128) LeadingZeros() int {
+	z := bits.LeadingZeros64(u.H)
+	if z == 64 {
+		z += bits.LeadingZeros64(u.L)
+	}
+	return z
 }
 
 func to128(ip []byte) uint128 {
