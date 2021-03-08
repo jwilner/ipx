@@ -2,12 +2,13 @@ package ipx
 
 import (
 	"bytes"
+	"math"
 	"net"
 )
 
 const (
-	maxUint32 = 1<<32 - 1
-	maxUint64 = 1<<64 - 1
+	maxUint32 = math.MaxUint32
+	maxUint64 = math.MaxUint64
 )
 
 type v4IPIter struct {
