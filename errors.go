@@ -7,11 +7,11 @@ var (
 	// When we have both IPv4 and IPv6 in the same request.
 	ErrVersionMismatch = errors.New("IP version mismatch")
 
-	// ErrBadIP is bad IP address error.
+	// ErrInvalidIP is invalid IP address error.
 	// When we pass bad or empty IP address.
-	ErrBadIP = errors.New("bad IP address")
+	ErrInvalidIP = errors.New("invalid IP address")
 
-	// ErrBadNetwork is bad IP network error.
+	// ErrInvalidNetwork is bad IP network error.
 	// When we pass bad or empty IP network.
-	ErrBadNetwork = errors.New("bad IP network")
+	ErrInvalidNetwork = errors.New("invalid IP network")
 )

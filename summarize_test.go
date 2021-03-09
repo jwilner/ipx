@@ -8,167 +8,240 @@ import (
 	"testing"
 
 	"github.com/ns1/ipx"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func ExampleSummarizeRange() {
-	fmt.Println(ipx.SummarizeRange(net.ParseIP("192.0.2.0"), net.ParseIP("192.0.2.130")))
+// ExampleSummarizeRange_v4 is an example of SummarizeRange for IPv4
+func ExampleSummarizeRange_v4() {
+	networks, _ := ipx.SummarizeRange(
+		net.ParseIP("192.0.2.0"),
+		net.ParseIP("192.0.2.130"),
+	)
+	fmt.Println(networks)
 	// Output:
 	// [192.0.2.0/25 192.0.2.128/31 192.0.2.130/32]
 }
 
-func ExampleSummarizeRange_IP6() {
-	fmt.Println(ipx.SummarizeRange(
+// ExampleSummarizeRange_v6 is an example of SummarizeRange for IPv6
+func ExampleSummarizeRange_v6() {
+	networks, _ := ipx.SummarizeRange(
 		net.ParseIP("::"),
 		net.ParseIP("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"),
-	))
+	)
+	fmt.Println(networks)
 	// Output:
 	// [::/0]
 }
 
-func BenchmarkSummarizeRange(b *testing.B) {
-	type bench struct {
-		name        string
-		first, last string
-	}
-	for _, g := range []struct {
-		name    string
-		benches []bench
-	}{
-		{
-			"ipv4",
-			[]bench{
-				{
-					"all",
-					"0.0.0.0",
-					"255.255.255.255",
-				},
-				{
-					"32",
-					"0.0.0.1",
-					"255.255.255.255",
-				},
-			},
-		},
-		{
-			"ipv6",
-			[]bench{
-				{
-					"all",
-					"::",
-					"ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff",
-				},
-				{
-					"128",
-					"::1",
-					"ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff",
-				},
-			},
-		},
-	} {
-		b.Run(g.name, func(b *testing.B) {
-			for _, c := range g.benches {
-				first, last := net.ParseIP(c.first), net.ParseIP(c.last)
-				b.Run(c.name, func(b *testing.B) {
-					b.ReportAllocs()
-					for i := 0; i < b.N; i++ {
-						_ = ipx.SummarizeRange(first, last)
-					}
-				})
+// BenchmarkSummarizeRange performance benchmarks for SummarizeRange
+func BenchmarkSummarizeRange(bb *testing.B) {
+	// helper function to run benchmark
+	bench := func(first, last string, expectedLen int) func(*testing.B) {
+		return func(b *testing.B) {
+			ipFirst := net.ParseIP(first)
+			ipLast := net.ParseIP(last)
+			b.ReportAllocs()
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				nwks, err := ipx.SummarizeRange(ipFirst, ipLast)
+				require.NoError(b, err, "failed to summarize range")
+				// note, we check only the output length.
+				// all corner cases should be covered by
+				// corresponding unit tests.
+				require.Len(b, nwks, expectedLen)
 			}
-		})
+		}
 	}
+
+	// IPv4
+	bb.Run("ipv4_all", bench("0.0.0.0", "255.255.255.255", 1))
+	bb.Run("ipv4_24", bench("10.10.10.0", "10.10.10.255", 1))
+	bb.Run("ipv4_32", bench("0.0.0.1", "255.255.255.255", 32))
+
+	// IPv6
+	bb.Run("ipv6_all", bench("::", "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff", 1))
+	bb.Run("ipv6_128", bench("::1", "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff", 128))
 }
 
-func TestSummarizeRange(t *testing.T) {
-	for _, c := range []struct {
-		name        string
-		first, last string
-		results     []string
-	}{
-		{"mismatched versions", "0.0.0.0", "::", []string{}},
-		{"no overlap", "192.0.2.1", "192.0.2.0", []string{}},
-		{
-			"simple",
-			"192.0.2.0",
-			"192.0.2.130",
-			[]string{"192.0.2.0/25", "192.0.2.128/31", "192.0.2.130/32"},
-		},
-		{
-			"single",
-			"192.0.2.0",
-			"192.0.2.0",
-			[]string{"192.0.2.0/32"},
-		},
-		{
-			"all",
-			"0.0.0.0",
-			"255.255.255.255",
-			[]string{"0.0.0.0/0"},
-		},
-		{
-			"odd start",
-			"192.0.2.101",
-			"192.0.2.130",
-			[]string{
-				"192.0.2.101/32",
-				"192.0.2.102/31",
-				"192.0.2.104/29",
-				"192.0.2.112/28",
-				"192.0.2.128/31",
-				"192.0.2.130/32",
-			},
-		},
-		{
-			"ipv6",
-			"1::",
-			"1:ffff:ffff:ffff:ffff:ffff:ffff:ffff",
-			[]string{"1::/16"},
-		},
-		{
-			"ipv6 all",
-			"::",
-			"ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff",
-			[]string{"::/0"},
-		},
-		{
-			"ipv6 odd start",
-			"1::1",
-			"1::30",
-			[]string{
-				"1::1/128",
-				"1::2/127",
-				"1::4/126",
-				"1::8/125",
-				"1::10/124",
-				"1::20/124",
-				"1::30/128",
-			},
-		},
-	} {
-		t.Run(c.name, func(t *testing.T) {
-			var found []string
-			for _, ipN := range ipx.SummarizeRange(net.ParseIP(c.first), net.ParseIP(c.last)) {
-				found = append(found, ipN.String())
-			}
-			if len(c.results) != len(found) {
-				t.Fatalf("expected %v elements but got %v: %v", len(c.results), len(found), found)
-			}
-			for i := range found {
-				if c.results[i] != found[i] {
-					t.Errorf("position %d: expected %v but got %v", i, c.results[i], found[i])
-				}
-			}
-		})
-	}
+// TestSummarizeRange unit tests for SummarizeRange
+func TestSummarizeRange(tt *testing.T) {
+	tt.Run("mismatched_versions", func(t *testing.T) {
+		_, err := ipx.SummarizeRange(
+			net.ParseIP("0.0.0.0"),
+			net.ParseIP("::1"),
+		)
+		require.Error(t, err, "should not summarize range")
+		assert.ErrorIs(t, err, ipx.ErrVersionMismatch)
+		assert.Contains(t, err.Error(), "IP version mismatch")
+	})
+
+	tt.Run("bad_first", func(t *testing.T) {
+		_, err := ipx.SummarizeRange(
+			net.ParseIP("bad"), // nil
+			net.ParseIP("192.168.2.200"),
+		)
+		require.Error(t, err, "should not summarize range")
+		assert.ErrorIs(t, err, ipx.ErrInvalidIP)
+		assert.Contains(t, err.Error(), "invalid IP address: first")
+	})
+
+	tt.Run("bad_last", func(t *testing.T) {
+		_, err := ipx.SummarizeRange(
+			net.ParseIP("192.168.2.100"),
+			net.ParseIP("bad"), // nil
+		)
+		require.Error(t, err, "should not summarize range")
+		assert.ErrorIs(t, err, ipx.ErrInvalidIP)
+		assert.Contains(t, err.Error(), "invalid IP address: last")
+	})
+
+	tt.Run("bad_both", func(t *testing.T) {
+		_, err := ipx.SummarizeRange(
+			net.ParseIP("bad"), // nil
+			net.ParseIP("bad"), // nil
+		)
+		require.Error(t, err, "should not summarize range")
+		assert.ErrorIs(t, err, ipx.ErrInvalidIP)
+		assert.Contains(t, err.Error(), "invalid IP address: first") // `first` is checked first
+	})
+
+	tt.Run("ipv4_no_overlap", func(t *testing.T) {
+		nwks, err := ipx.SummarizeRange(
+			net.ParseIP("192.168.2.200"),
+			net.ParseIP("192.168.2.100"),
+		)
+		require.NoError(t, err, "failed to summarize range")
+		assert.Empty(t, nwks.Strings())
+	})
+
+	tt.Run("ipv4_simple", func(t *testing.T) {
+		nwks, err := ipx.SummarizeRange(
+			net.ParseIP("192.0.2.0"),
+			net.ParseIP("192.0.2.130"),
+		)
+		require.NoError(t, err, "failed to summarize range")
+		assert.Equal(t, []string{
+			"192.0.2.0/25",
+			"192.0.2.128/31",
+			"192.0.2.130/32",
+		}, nwks.Strings())
+	})
+
+	tt.Run("ipv4_32", func(t *testing.T) {
+		nwks, err := ipx.SummarizeRange(
+			net.ParseIP("192.0.2.100").To4(),
+			net.ParseIP("192.0.2.100").To4(),
+		)
+		require.NoError(t, err, "failed to summarize range")
+		assert.Equal(t, []string{
+			"192.0.2.100/32",
+		}, nwks.Strings())
+	})
+
+	tt.Run("ipv4_16", func(t *testing.T) {
+		nwks, err := ipx.SummarizeRange(
+			net.ParseIP("192.168.0.0"),
+			net.ParseIP("192.168.255.255"),
+		)
+		require.NoError(t, err, "failed to summarize range")
+		assert.Equal(t, []string{
+			"192.168.0.0/16",
+		}, nwks.Strings())
+	})
+
+	tt.Run("ipv4_all", func(t *testing.T) {
+		nwks, err := ipx.SummarizeRange(
+			net.ParseIP("0.0.0.0"),
+			net.ParseIP("255.255.255.255"),
+		)
+		require.NoError(t, err, "failed to summarize range")
+		assert.Equal(t, []string{
+			"0.0.0.0/0",
+		}, nwks.Strings())
+	})
+
+	tt.Run("ipv4_odd_start", func(t *testing.T) {
+		nwks, err := ipx.SummarizeRange(
+			net.ParseIP("192.0.2.101"),
+			net.ParseIP("192.0.2.130"),
+		)
+		require.NoError(t, err, "failed to summarize range")
+		assert.Equal(t, []string{
+			"192.0.2.101/32",
+			"192.0.2.102/31",
+			"192.0.2.104/29",
+			"192.0.2.112/28",
+			"192.0.2.128/31",
+			"192.0.2.130/32",
+		}, nwks.Strings())
+	})
+
+	tt.Run("ipv6_no_overlap", func(t *testing.T) {
+		nwks, err := ipx.SummarizeRange(
+			net.ParseIP("::200"),
+			net.ParseIP("::100"),
+		)
+		require.NoError(t, err, "failed to summarize range")
+		assert.Empty(t, nwks.Strings())
+	})
+
+	tt.Run("ipv6_128", func(t *testing.T) {
+		nwks, err := ipx.SummarizeRange(
+			net.ParseIP("::100").To16(),
+			net.ParseIP("::100").To16(),
+		)
+		require.NoError(t, err, "failed to summarize range")
+		assert.Equal(t, []string{
+			"::100/128",
+		}, nwks.Strings())
+	})
+
+	tt.Run("ipv6_16", func(t *testing.T) {
+		nwks, err := ipx.SummarizeRange(
+			net.ParseIP("1::"),
+			net.ParseIP("1:ffff:ffff:ffff:ffff:ffff:ffff:ffff"),
+		)
+		require.NoError(t, err, "failed to summarize range")
+		assert.Equal(t, []string{
+			"1::/16",
+		}, nwks.Strings())
+	})
+
+	tt.Run("ipv6_all", func(t *testing.T) {
+		nwks, err := ipx.SummarizeRange(
+			net.ParseIP("::"),
+			net.ParseIP("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"),
+		)
+		require.NoError(t, err, "failed to summarize range")
+		assert.Equal(t, []string{
+			"::/0",
+		}, nwks.Strings())
+	})
+
+	tt.Run("ipv6_odd_start", func(t *testing.T) {
+		nwks, err := ipx.SummarizeRange(
+			net.ParseIP("1::1"),
+			net.ParseIP("1::30"),
+		)
+		require.NoError(t, err, "failed to summarize range")
+		assert.Equal(t, []string{
+			"1::1/128",
+			"1::2/127",
+			"1::4/126",
+			"1::8/125",
+			"1::10/124",
+			"1::20/124",
+			"1::30/128",
+		}, nwks.Strings())
+	})
 }
 
 func ExampleNetToRange() {
-	fmt.Println(ipx.SummarizeRange(
-		net.ParseIP("::"),
-		net.ParseIP("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"),
-	))
+	_, nwk, _ := net.ParseCIDR("192.168.1.100/24")
+	fmt.Println(ipx.NetToRange(nwk))
 	// Output:
-	// [::/0]
+	// 192.168.1.0 192.168.1.255
 }
 
 func TestNetToRange(t *testing.T) {

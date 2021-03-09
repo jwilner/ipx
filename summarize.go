@@ -11,7 +11,7 @@ var v4InV6Prefix = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff}
 
 // SummarizeRange returns a series of networks which cover the range
 // between the first and last addresses, inclusive.
-func SummarizeRange(first, last net.IP) ([]*Network, error) {
+func SummarizeRange(first, last net.IP) (Networks, error) {
 	// first IPv4 or IPv6
 	var firstV4, firstV6 net.IP
 	switch len(first) {
@@ -23,12 +23,12 @@ func SummarizeRange(first, last net.IP) ([]*Network, error) {
 		// need to do additional check converting it with `To4()`
 		firstV4 = first.To4()
 		if firstV4 == nil {
-			firstV6 = first
-	}
+			firstV6 = first // first is IPv6
+		}
 
 	default:
 		// invalid first IP address length
-		return nil, fmt.Errorf("%w: first", ErrBadIP)
+		return nil, fmt.Errorf("%w: first", ErrInvalidIP)
 	}
 
 	// last IPv4 or IPv6
@@ -42,12 +42,12 @@ func SummarizeRange(first, last net.IP) ([]*Network, error) {
 		// need to do additional check converting it with `To4()`
 		lastV4 = last.To4()
 		if lastV4 == nil {
-			lastV6 = last
-}
+			lastV6 = last // last is IPv6
+		}
 
 	default:
 		// invalid last IP address length
-		return nil, fmt.Errorf("%w: last", ErrBadIP)
+		return nil, fmt.Errorf("%w: last", ErrInvalidIP)
 	}
 
 	switch {
@@ -62,7 +62,7 @@ func SummarizeRange(first, last net.IP) ([]*Network, error) {
 
 // summarizeRange4 returns a series of IPv4 networks which cover the range
 // between the first and last IPv4 addresses, inclusive.
-func summarizeRange4(first, last uint32) (networks []*Network) {
+func summarizeRange4(first, last uint32) (networks Networks) {
 	for first <= last {
 		// the network will either be as long as all the trailing zeros of the first address OR the number of bits
 		// necessary to cover the distance between first and last address -- whichever is smaller
@@ -98,7 +98,7 @@ func summarizeRange4(first, last uint32) (networks []*Network) {
 
 // summarizeRange6 returns a series of IPv6 networks which cover the range
 // between the first and last IPv6 addresses, inclusive.
-func summarizeRange6(first, last uint128) (networks []*Network) {
+func summarizeRange6(first, last uint128) (networks Networks) {
 	for first.Cmp(last) <= 0 { // first <= last
 		// the network will either be as long as all the trailing zeros of the first address OR the number of bits
 		// necessary to cover the distance between first and last address -- whichever is smaller
